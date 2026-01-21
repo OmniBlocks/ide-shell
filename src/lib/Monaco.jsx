@@ -1,11 +1,10 @@
 /** @jsxImportSource @emotion/react */
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import Editor, { loader } from '@monaco-editor/react';
 
 // --- Lazy Worker Configuration ---
-// We define the environment, but we don't import monaco yet.
 const configureMonacoEnvironment = () => {
-  if (typeof self === 'undefined') return;
+  if (typeof self === 'undefined' || self.MonacoEnvironment) return;
 
   self.MonacoEnvironment = {
     async getWorker(_, label) {
@@ -43,15 +42,31 @@ const MonacoEditor = ({
   theme = 'omni-dark' 
 }) => {
   const editorRef = useRef(null);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    // Initialize the environment before the loader tries to use it
-    configureMonacoEnvironment();
+    let isMounted = true;
 
-    // Dynamically import monaco-editor ONLY when this component mounts
-    import('monaco-editor').then((monaco) => {
+    const initMonaco = async () => {
+      // 1. Setup workers
+      configureMonacoEnvironment();
+
+      // 2. Actually download the library
+      const monaco = await import('monaco-editor');
+
+      // 3. Configure the loader with the downloaded instance
       loader.config({ monaco });
-    });
+
+      // 4. Wait for the loader to initialize fully
+      await loader.init();
+
+      if (isMounted) {
+        setIsReady(true);
+      }
+    };
+
+    initMonaco();
+    return () => { isMounted = false; };
   }, []);
 
   const handleEditorWillMount = (monaco) => {
@@ -60,11 +75,10 @@ const MonacoEditor = ({
       inherit: true,
       rules: [],
       colors: {
-        'editor.background': '#1e1e1e',
-        'editorCursor.foreground': '#007acc',
-        'editor.lineHighlightBackground': '#2a2d2e',
-        'editor.selectionBackground': '#264f78',
-        'editor.inactiveSelectionBackground': '#3a3d41',
+        'editor.background': '#33333f', // OmniBlocks background
+        'editorCursor.foreground': '#59c0c0',
+        'editor.lineHighlightBackground': '#3e3e4a',
+        'editor.selectionBackground': '#59c0c033',
       },
     });
   };
@@ -73,8 +87,20 @@ const MonacoEditor = ({
     editorRef.current = editor;
   };
 
+  // We return the "Loading..." state manually until the JS is downloaded and initialized
+  if (!isReady) {
+    return (
+      <div style={{ 
+        height: '100%', 
+        width: '100%', 
+        background: '#33333f', 
+      }}>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ height: '100%', width: '100%', background: '#1e1e1e' }}>
+    <div style={{ height: '100%', width: '100%', background: '#33333f' }}>
       <Editor
         height="100%"
         language={language}
@@ -83,14 +109,13 @@ const MonacoEditor = ({
         onChange={onChange}
         onMount={handleEditorDidMount}
         beforeMount={handleEditorWillMount}
-        loading={<div style={{ color: '#888', padding: '20px', fontSize: '12px' }}>Loading...</div>}
         options={{
           automaticLayout: true,
           fontSize: 13,
           fontFamily: "var(--font-mono, 'Fira Code', monospace)",
           minimap: { enabled: false },
           scrollBeyondLastLine: false,
-          fixedOverflowWidgets: true, // Crucial for Tabbed layouts
+          fixedOverflowWidgets: true,
           padding: { top: 8 }
         }}
       />
