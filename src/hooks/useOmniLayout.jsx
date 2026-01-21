@@ -56,6 +56,8 @@ export const LayoutProvider = ({ children }) => {
     }
 
     if (plugin.onLoad) plugin.onLoad();
+
+    console.log(`Registered plugin: ${plugin.id}`);
   }, [setSelected]);
 
   /**
