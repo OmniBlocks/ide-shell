@@ -8,15 +8,17 @@
   --accent-3: #2c8787;
 
   /* generic stuff */
-  --page-background: white;
+  --page-background: #e8e8e8;
+  --page-foreground: black;
   --black-transparent: #00000033;
   --white-transparent: #ffffff33;
   --modal-overlay: #59c0c08f;
 }
 
 /* turn the light stuff into dark */
-.ob-dark-theme {
+:global(.ob-dark-theme) {
   --page-background: #33333f;
+  --page-foreground: white;
   --black-transparent: #ffffff33;
   --white-transparent: #00000033;
   --modal-overlay: #00000058;

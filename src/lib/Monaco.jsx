@@ -62,7 +62,7 @@ const MonacoEditor = ({
   };
 
   return (
-    <div style={{ height: '100vh', width: '100vw' }}>
+    <div style={{ height: '100%', width: '100%' }}>
       <Editor
         height="100%"
         language={language}

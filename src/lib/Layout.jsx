@@ -1,39 +1,39 @@
 /** @jsxImportSource @emotion/react */
 import React from 'react';
 import styled from '@emotion/styled';
-import {Tabs} from 'radix-ui';
+import { Tabs } from 'radix-ui';
 import { Group, Panel, Separator } from 'react-resizable-panels';
 import { useOmniLayout } from '../hooks/useOmniLayout';
 
-// --- Styled Components (Human Readable via label) ---
+// --- Styled Components (Themed via CSS Variables) ---
 
 const AppShell = styled.div`
   display: flex;
   flex-direction: column;
   height: 100vh;
   width: 100vw;
-  background-color: #1e1e1e;
-  color: #ccc;
+  background-color: var(--page-background, #1e1e1e);
+  color: var(--page-foreground, #cccccc);
   overflow: hidden;
   label: AppShell;
 `;
 
 const ActivityBar = styled.nav`
   width: 48px;
-  background-color: #333;
-  border-right: 1px solid #252525;
+  background-color: var(--activity-bar-bg, #333);
+  border-right: 1px solid var(--border-color, #252525);
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 10px 0;
-  gap: 20px;
+  gap: 15px;
   label: ActivityBar;
 `;
 
 const TabList = styled(Tabs.List)`
   display: flex;
+  background: var(--tab-bar-bg, #252526);
   border-bottom: 1px solid rgba(0,0,0,0.3);
-  background: #252526;
   height: 35px;
   label: TabList;
 `;
@@ -47,69 +47,55 @@ const TabTrigger = styled(Tabs.Trigger)`
   cursor: pointer;
   display: flex;
   align-items: center;
-  transition: all 0.2s;
+  transition: background 0.2s;
   &[data-state='active'] {
     color: #fff;
-    background: #1e1e1e;
-    border-bottom: 2px solid var(--accent-1, #007acc);
+    background: var(--editor-bg, #1e1e1e);
+    border-bottom: 1px solid var(--accent-1, #007acc);
   }
-  &:hover { color: #fff; }
+  &:hover { background: rgba(255,255,255,0.05); }
   label: TabTrigger;
 `;
 
 const StatusBar = styled.footer`
   height: 22px;
-  background-color: var(--accent-3, #007acc);
+  background-color: var(--status-bar-bg, #007acc);
   color: white;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 10px;
   font-size: 11px;
-  user-select: none;
   label: StatusBar;
 `;
 
 const Resizer = styled(Separator)`
   background-color: #000;
-  &[aria-orientation="horizontal"] { width: 2px; cursor: col-resize; }
-  &[aria-orientation="vertical"] { height: 2px; cursor: row-resize; }
+  &[aria-orientation="horizontal"] { cursor: col-resize; }
+  &[aria-orientation="vertical"] { cursor: row-resize; }
   &:hover { background-color: var(--accent-1, #007acc); }
-  label: Resizer;
 `;
 
-// --- Helper: Tabbed Slot ---
+// --- Slot Helpers ---
 
-const TabbedSlot = ({ panels, onToggle }) => {
-  const [activeTab, setActiveTab] = React.useState(panels[0]?.id);
-
-  // Keep activeTab in sync if panels change
-  React.useEffect(() => {
-    if (!panels.find(p => p.id === activeTab) && panels.length > 0) {
-      setActiveTab(panels[0].id);
-    }
-  }, [panels, activeTab]);
-
+const TabbedSlot = ({ panels, activeId, onToggle, onSelect }) => {
   if (panels.length === 0) return null;
-
   return (
-    <Tabs.Root value={activeTab} onValueChange={setActiveTab} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <Tabs.Root value={activeId} onValueChange={onSelect} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <TabList>
         {panels.map(p => (
           <TabTrigger key={p.id} value={p.id}>{p.title}</TabTrigger>
         ))}
         <div style={{ flex: 1 }} />
-        {/* Closes only the currently visible tab */}
         <button 
-          onClick={() => onToggle(activeTab)} 
+          onClick={() => onToggle(activeId)} 
           style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', padding: '0 10px', fontSize: '14px' }}
-          title="Close Panel"
         >
           ×
         </button>
       </TabList>
       {panels.map(p => (
-        <Tabs.Content key={p.id} value={p.id} style={{ flex: 1, overflow: 'auto', background: '#1e1e1e' }}>
+        <Tabs.Content key={p.id} value={p.id} style={{ flex: 1, overflow: 'auto', background: 'var(--editor-bg, #1e1e1e)' }}>
           {p.component}
         </Tabs.Content>
       ))}
@@ -117,20 +103,32 @@ const TabbedSlot = ({ panels, onToggle }) => {
   );
 };
 
-// --- Main Layout ---
+// --- Main Shell Logic ---
 
-export const OmniLayout = ({ children }) => {
-  const { panels = {}, togglePanel, isOpen } = useOmniLayout();
-  const allPanels = Object.values(panels);
+export const OmniLayout = () => {
+  const { 
+    panels = [], 
+    statusItems = [], 
+    togglePanel, 
+    isOpen, 
+    setSelected, 
+    activeSelection 
+  } = useOmniLayout();
 
-  const leftActive = allPanels.find(p => p.position === 'left' && isOpen(p.id));
-  const bottomPanels = allPanels.filter(p => p.position === 'bottom' && isOpen(p.id));
+  // Sort panels into UI buckets
+  const sidebarPanels = panels.filter(p => p.position === 'left');
+  const activeSidebar = sidebarPanels.find(p => isOpen(p.id));
+  
+  const bottomPanels = panels.filter(p => p.position === 'bottom' && isOpen(p.id));
+  const centerPanels = panels.filter(p => p.position === 'center');
 
   return (
     <AppShell>
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        
+        {/* 1. Activity Bar (Icons for Sidebars) */}
         <ActivityBar>
-          {allPanels.map(p => (
+          {sidebarPanels.map(p => (
             <div 
               key={p.id} 
               onClick={() => togglePanel(p.id)} 
@@ -147,30 +145,47 @@ export const OmniLayout = ({ children }) => {
           ))}
         </ActivityBar>
 
+        {/* 2. Main Resizable Layout Group */}
         <Group orientation="horizontal">
-          {leftActive && (
+          
+          {/* Sidebar Slot */}
+          {activeSidebar && (
             <>
-              <Panel collapsible defaultSize={300} minSize={10}>
-                <div style={{ height: '35px', padding: '0 12px', display: 'flex', alignItems: 'center', fontSize: 11, fontWeight: 700, background: '#252526', borderBottom: '1px solid rgba(0,0,0,0.2)' }}>
-                  {leftActive.title}
+              <Panel collapsible defaultSize={20} minSize={10} style={{ display: 'flex', flexDirection: 'column', background: '#252526' }}>
+                <div style={{ height: '35px', padding: '0 12px', display: 'flex', alignItems: 'center', fontSize: 11, fontWeight: 700, borderBottom: '1px solid rgba(0,0,0,0.2)' }}>
+                  {activeSidebar.title.toUpperCase()}
                 </div>
-                <div style={{ flex: 1, overflow: 'auto' }}>{leftActive.component}</div>
+                <div style={{ flex: 1, overflow: 'auto' }}>{activeSidebar.component}</div>
               </Panel>
               <Resizer />
             </>
           )}
 
+          {/* Center + Bottom Slot */}
           <Panel>
             <Group orientation="vertical">
+              
+              {/* Main Center Area */}
               <Panel defaultSize={75} style={{ overflow: 'hidden' }}>
-                {children}
+                <TabbedSlot 
+                  panels={centerPanels} 
+                  activeId={activeSelection?.center} 
+                  onSelect={(id) => setSelected('center', id)}
+                  onToggle={togglePanel}
+                />
               </Panel>
               
+              {/* Bottom Dock */}
               {bottomPanels.length > 0 && (
                 <>
                   <Resizer />
                   <Panel collapsible defaultSize={25}>
-                    <TabbedSlot panels={bottomPanels} onToggle={togglePanel} />
+                    <TabbedSlot 
+                      panels={bottomPanels} 
+                      activeId={activeSelection?.bottom || bottomPanels[0]?.id}
+                      onSelect={(id) => setSelected('bottom', id)}
+                      onToggle={togglePanel} 
+                    />
                   </Panel>
                 </>
               )}
@@ -179,18 +194,21 @@ export const OmniLayout = ({ children }) => {
         </Group>
       </div>
 
-      {/* NEW: Built-in Status Bar */}
+      {/* 3. Hackable Status Bar */}
       <StatusBar>
         <div style={{ display: 'flex', gap: '15px' }}>
-          <span>Ready</span>
-          <span>{leftActive ? `Viewing ${leftActive.title}` : 'No Sidebar'}</span>
+          {statusItems.filter(i => i.alignment === 'left').map(item => (
+            <span key={item.id} onClick={item.onClick} style={{ cursor: item.onClick ? 'pointer' : 'default' }}>
+              {item.text}
+            </span>
+          ))}
         </div>
         <div style={{ display: 'flex', gap: '15px' }}>
-          <span>UTF-8</span>
-          <span>JavaScript</span>
-          <span style={{ cursor: 'pointer' }} onClick={() => window.omniLayout.togglePanel('terminal')}>
-            {bottomPanels.length > 0 ? '▼ Hide Terminal' : '▲ Show Terminal'}
-          </span>
+          {statusItems.filter(i => i.alignment === 'right').map(item => (
+            <span key={item.id} onClick={item.onClick} style={{ cursor: item.onClick ? 'pointer' : 'default' }}>
+              {item.text}
+            </span>
+          ))}
         </div>
       </StatusBar>
     </AppShell>
