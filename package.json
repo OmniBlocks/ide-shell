@@ -1,5 +1,5 @@
 {
-  "name": "ide-shell",
+  "name": "@omniblocks/ide-shell",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -10,8 +10,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@monaco-editor/react": "^4.7.0",
+    "modern-normalize": "^3.0.1",
+    "monaco-editor": "^0.55.1",
+    "radix-ui": "^1.4.3",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "react-resizable-panels": "^4.4.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

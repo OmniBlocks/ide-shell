@@ -1,0 +1,23 @@
+/* this is global so no need to import it */
+/* TODO: better theming system */
+
+:root {
+  /* omniblocks colours */
+  --accent-1: #59c0c0;
+  --accent-2: #49b0b0;
+  --accent-3: #2c8787;
+
+  /* generic stuff */
+  --page-background: white;
+  --black-transparent: #00000033;
+  --white-transparent: #ffffff33;
+  --modal-overlay: #59c0c08f;
+}
+
+/* turn the light stuff into dark */
+.ob-dark-theme {
+  --page-background: #33333f;
+  --black-transparent: #ffffff33;
+  --white-transparent: #00000033;
+  --modal-overlay: #00000058;
+}
