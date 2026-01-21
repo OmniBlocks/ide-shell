@@ -1,31 +1,40 @@
-import React, { useRef } from 'react';
+/** @jsxImportSource @emotion/react */
+import React, { useRef, useEffect } from 'react';
 import Editor, { loader } from '@monaco-editor/react';
-import * as monaco from 'monaco-editor';
 
-/** * 1. LOCAL WORKER CONFIGURATION
- * This prevents Monaco from reaching out to CDNs for its language features.
- * Vite's "?worker" suffix treats these imports as separate entry points.
- */
-import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
-import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
-import cssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker';
-import htmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker';
-import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker';
+// --- Lazy Worker Configuration ---
+// We define the environment, but we don't import monaco yet.
+const configureMonacoEnvironment = () => {
+  if (typeof self === 'undefined') return;
 
-self.MonacoEnvironment = {
-  getWorker(_, label) {
-    if (label === 'json') return new jsonWorker();
-    if (label === 'css' || label === 'scss' || label === 'less') return new cssWorker();
-    if (label === 'html' || label === 'handlebars' || label === 'razor') return new htmlWorker();
-    if (label === 'typescript' || label === 'javascript') return new tsWorker();
-    return new editorWorker();
-  },
+  self.MonacoEnvironment = {
+    async getWorker(_, label) {
+      let WorkerModule;
+      switch (label) {
+        case 'json':
+          WorkerModule = await import('monaco-editor/esm/vs/language/json/json.worker?worker');
+          break;
+        case 'css':
+        case 'scss':
+        case 'less':
+          WorkerModule = await import('monaco-editor/esm/vs/language/css/css.worker?worker');
+          break;
+        case 'html':
+        case 'handlebars':
+        case 'razor':
+          WorkerModule = await import('monaco-editor/esm/vs/language/html/html.worker?worker');
+          break;
+        case 'typescript':
+        case 'javascript':
+          WorkerModule = await import('monaco-editor/esm/vs/language/typescript/ts.worker?worker');
+          break;
+        default:
+          WorkerModule = await import('monaco-editor/esm/vs/editor/editor.worker?worker');
+      }
+      return new WorkerModule.default();
+    },
+  };
 };
-
-/** * 2. DISABLE CDN LOADING
- * Point the @monaco-editor/react loader to our local monaco instance.
- */
-loader.config({ monaco });
 
 const MonacoEditor = ({ 
   language = 'javascript', 
@@ -35,34 +44,37 @@ const MonacoEditor = ({
 }) => {
   const editorRef = useRef(null);
 
-  const handleEditorWillMount = (monacoInstance) => {
-    // Define the custom theme once before the component mounts
-    monacoInstance.editor.defineTheme('omni-dark', {
+  useEffect(() => {
+    // Initialize the environment before the loader tries to use it
+    configureMonacoEnvironment();
+
+    // Dynamically import monaco-editor ONLY when this component mounts
+    import('monaco-editor').then((monaco) => {
+      loader.config({ monaco });
+    });
+  }, []);
+
+  const handleEditorWillMount = (monaco) => {
+    monaco.editor.defineTheme('omni-dark', {
       base: 'vs-dark',
       inherit: true,
       rules: [],
       colors: {
-        'editor.background': '#33333f',      // Your dark mode color
-        'editorCursor.foreground': '#59c0c0', // Your spinner color
-        'editor.lineHighlightBackground': '#3e3e4a',
-        'editor.selectionBackground': '#59c0c033',
+        'editor.background': '#1e1e1e',
+        'editorCursor.foreground': '#007acc',
+        'editor.lineHighlightBackground': '#2a2d2e',
+        'editor.selectionBackground': '#264f78',
+        'editor.inactiveSelectionBackground': '#3a3d41',
       },
     });
   };
 
   const handleEditorDidMount = (editor) => {
     editorRef.current = editor;
-    
-    // Logic to hide the splash screen once the editor is visible
-    const splash = document.getElementById('splash-screen');
-    if (splash) {
-      splash.classList.add('fade-out');
-      setTimeout(() => splash.remove(), 400);
-    }
   };
 
   return (
-    <div style={{ height: '100%', width: '100%' }}>
+    <div style={{ height: '100%', width: '100%', background: '#1e1e1e' }}>
       <Editor
         height="100%"
         language={language}
@@ -71,15 +83,15 @@ const MonacoEditor = ({
         onChange={onChange}
         onMount={handleEditorDidMount}
         beforeMount={handleEditorWillMount}
+        loading={<div style={{ color: '#888', padding: '20px', fontSize: '12px' }}>Loading...</div>}
         options={{
           automaticLayout: true,
-          fontSize: 14,
-          fontFamily: "'Fira Code', 'Courier New', monospace",
-          minimap: { enabled: true },
-          smoothScrolling: true,
-          cursorBlinking: 'smooth',
-          cursorStyle: 'line',
-          padding: { top: 10 }
+          fontSize: 13,
+          fontFamily: "var(--font-mono, 'Fira Code', monospace)",
+          minimap: { enabled: false },
+          scrollBeyondLastLine: false,
+          fixedOverflowWidgets: true, // Crucial for Tabbed layouts
+          padding: { top: 8 }
         }}
       />
     </div>
