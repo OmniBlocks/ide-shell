@@ -21,8 +21,7 @@
     "react-16": "npm:react@16.14.0",
     "react-dom": "^19.2.0",
     "react-dom-16": "npm:react-dom@16.14.0",
-    "react-resizable-panels": "^4.4.1",
-    "scratch-gui": "github:OmniBlocks/scratch-gui#main"
+    "react-resizable-panels": "^4.4.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
