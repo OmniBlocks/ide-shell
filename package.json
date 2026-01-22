@@ -13,6 +13,7 @@
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@monaco-editor/react": "^4.7.0",
+    "dockview": "^4.13.1",
     "modern-normalize": "^3.0.1",
     "monaco-editor": "^0.55.1",
     "radix-ui": "^1.4.3",

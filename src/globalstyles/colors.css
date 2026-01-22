@@ -10,10 +10,11 @@ html {
   --accent-3: #2c8787;
 
   /* generic stuff */
-  --page-background: #e8e8e8;
+  --shell-background: #e6e6e6;
+  --white: white;
   --page-foreground: black;
-  --black-transparent: #00000033;
-  --white-transparent: #ffffff33;
+  --black-transparent: #00000011;
+  --white-transparent: #ffffff11;
   --modal-overlay: #59c0c08f;
 }
 
@@ -21,9 +22,10 @@ html {
 html.ob-dark-theme {
   color-scheme: dark;
 
-  --page-background: #33333f;
+  --shell-background: #33333f;
+  --white: #111;
   --page-foreground: white;
-  --black-transparent: #ffffff33;
-  --white-transparent: #00000033;
+  --black-transparent: #ffffff22;
+  --white-transparent: #00000022;
   --modal-overlay: #00000058;
 }
