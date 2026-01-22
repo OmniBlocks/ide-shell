@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import 'modern-normalize';
 import './index.css'; 
+import './globalstyles/colors.css'; 
 import { LayoutProvider } from './hooks/useOmniLayout';
 import { OmniLayout } from './lib/Layout';
 import { CorePlugin } from './plugins/corePlugin';

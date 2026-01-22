@@ -12,16 +12,17 @@ const AppShell = styled.div`
   flex-direction: column;
   height: 100vh;
   width: 100vw;
-  background-color: var(--page-background, #1e1e1e);
-  color: var(--page-foreground, #cccccc);
+  background-color: var(--page-background);
+  color: var(--page-foreground);
   overflow: hidden;
   label: AppShell;
 `;
 
 const ActivityBar = styled.nav`
   width: 48px;
-  background-color: var(--activity-bar-bg, #333);
-  border-right: 1px solid var(--border-color, #252525);
+  /* Slightly darker or same as background depending on theme */
+  background-color: var(--page-background); 
+  border-right: 1px solid var(--black-transparent);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -32,8 +33,9 @@ const ActivityBar = styled.nav`
 
 const TabList = styled(Tabs.List)`
   display: flex;
-  background: var(--tab-bar-bg, #252526);
-  border-bottom: 1px solid rgba(0,0,0,0.3);
+  /* Uses the transparent black to slightly darken the tab row */
+  background: var(--black-transparent); 
+  border-bottom: 1px solid var(--black-transparent);
   height: 35px;
   label: TabList;
 `;
@@ -43,24 +45,31 @@ const TabTrigger = styled(Tabs.Trigger)`
   font-size: 11px;
   border: none;
   background: transparent;
-  color: #888;
+  color: var(--page-foreground);
+  opacity: 0.6;
   cursor: pointer;
   display: flex;
   align-items: center;
-  transition: background 0.2s;
+  transition: all 0.2s;
+
   &[data-state='active'] {
-    color: #fff;
-    background: var(--editor-bg, #1e1e1e);
-    border-bottom: 1px solid var(--accent-1, #007acc);
+    opacity: 1;
+    background: var(--page-background);
+    border-bottom: 2px solid var(--accent-1);
   }
-  &:hover { background: rgba(255,255,255,0.05); }
+  
+  &:hover { 
+    background: var(--white-transparent); 
+    opacity: 1;
+  }
   label: TabTrigger;
 `;
 
 const StatusBar = styled.footer`
   height: 22px;
-  background-color: var(--status-bar-bg, #007acc);
-  color: white;
+  /* Use accent color for the classic IDE status bar look */
+  background-color: var(--accent-1);
+  color: white; 
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -70,10 +79,22 @@ const StatusBar = styled.footer`
 `;
 
 const Resizer = styled(Separator)`
-  background-color: #000;
-  &[aria-orientation="horizontal"] { cursor: col-resize; }
-  &[aria-orientation="vertical"] { cursor: row-resize; }
-  &:hover { background-color: var(--accent-1, #007acc); }
+  background-color: var(--black-transparent);
+  transition: background-color 0.2s;
+  
+  &[aria-orientation="horizontal"] { 
+    width: 2px;
+    cursor: col-resize; 
+  }
+  &[aria-orientation="vertical"] { 
+    height: 2px;
+    cursor: row-resize; 
+  }
+  
+  &[data-resize-handle-active],
+  &:hover { 
+    background-color: var(--accent-1); 
+  }
 `;
 
 // --- Slot Helpers ---
@@ -89,13 +110,25 @@ const TabbedSlot = ({ panels, activeId, onToggle, onSelect }) => {
         <div style={{ flex: 1 }} />
         <button 
           onClick={() => onToggle(activeId)} 
-          style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', padding: '0 10px', fontSize: '14px' }}
+          style={{ 
+            background: 'none', 
+            border: 'none', 
+            color: 'var(--page-foreground)', 
+            opacity: 0.5,
+            cursor: 'pointer', 
+            padding: '0 10px', 
+            fontSize: '14px' 
+          }}
         >
           ×
         </button>
       </TabList>
       {panels.map(p => (
-        <Tabs.Content key={p.id} value={p.id} style={{ flex: 1, overflow: 'auto', background: 'var(--editor-bg, #1e1e1e)' }}>
+        <Tabs.Content 
+          key={p.id} 
+          value={p.id} 
+          style={{ flex: 1, overflow: 'auto', background: 'var(--page-background)' }}
+        >
           {p.component}
         </Tabs.Content>
       ))}
@@ -115,7 +148,6 @@ export const OmniLayout = () => {
     activeSelection 
   } = useOmniLayout();
 
-  // Sort panels into UI buckets
   const sidebarPanels = panels.filter(p => p.position === 'left');
   const activeSidebar = sidebarPanels.find(p => isOpen(p.id));
   
@@ -126,7 +158,7 @@ export const OmniLayout = () => {
     <AppShell>
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         
-        {/* 1. Activity Bar (Icons for Sidebars) */}
+        {/* 1. Activity Bar */}
         <ActivityBar>
           {sidebarPanels.map(p => (
             <div 
@@ -134,9 +166,10 @@ export const OmniLayout = () => {
               onClick={() => togglePanel(p.id)} 
               style={{ 
                 cursor: 'pointer', 
+                color: isOpen(p.id) ? 'var(--accent-1)' : 'var(--page-foreground)',
                 opacity: isOpen(p.id) ? 1 : 0.4, 
                 fontSize: 20,
-                transition: 'opacity 0.2s'
+                transition: 'all 0.2s'
               }}
               title={p.title}
             >
@@ -151,8 +184,19 @@ export const OmniLayout = () => {
           {/* Sidebar Slot */}
           {activeSidebar && (
             <>
-              <Panel collapsible defaultSize={20} minSize={10} style={{ display: 'flex', flexDirection: 'column', background: '#252526' }}>
-                <div style={{ height: '35px', padding: '0 12px', display: 'flex', alignItems: 'center', fontSize: 11, fontWeight: 700, borderBottom: '1px solid rgba(0,0,0,0.2)' }}>
+              <Panel collapsible defaultSize={20} minSize={10} style={{ display: 'flex', flexDirection: 'column', background: 'var(--black-transparent)' }}>
+                <div style={{ 
+                  height: '35px', 
+                  padding: '0 12px', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  fontSize: 11, 
+                  fontWeight: 700, 
+                  letterSpacing: '0.5px',
+                  borderBottom: '1px solid var(--black-transparent)',
+                  color: 'var(--page-foreground)',
+                  opacity: 0.8
+                }}>
                   {activeSidebar.title.toUpperCase()}
                 </div>
                 <div style={{ flex: 1, overflow: 'auto' }}>{activeSidebar.component}</div>
@@ -194,7 +238,7 @@ export const OmniLayout = () => {
         </Group>
       </div>
 
-      {/* 3. Hackable Status Bar */}
+      {/* 3. Status Bar */}
       <StatusBar>
         <div style={{ display: 'flex', gap: '15px' }}>
           {statusItems.filter(i => i.alignment === 'left').map(item => (

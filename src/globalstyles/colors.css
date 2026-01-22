@@ -1,7 +1,9 @@
 /* this is global so no need to import it */
 /* TODO: better theming system */
 
-:root {
+html {
+  color-scheme: light;
+
   /* omniblocks colours */
   --accent-1: #59c0c0;
   --accent-2: #49b0b0;
@@ -16,7 +18,9 @@
 }
 
 /* turn the light stuff into dark */
-:global(.ob-dark-theme) {
+html.ob-dark-theme {
+  color-scheme: dark;
+
   --page-background: #33333f;
   --page-foreground: white;
   --black-transparent: #ffffff33;
